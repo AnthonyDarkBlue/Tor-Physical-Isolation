@@ -1,0 +1,208 @@
+#!/bin/bash
+
+root_check(){
+if (( $EUID != 0 )); then
+  echo -e "\nMust be run as root. Type in 'sudo $0' to run it as root.\n"
+  exit 1
+fi
+}
+
+separator(){
+sep="\n-------------------------------------------------------------------"
+echo $sep
+}
+
+configure_interfaces(){
+separator
+
+echo "\nSetting up static IP address"
+cp /etc/dhcpcd.conf /etc/dhcpcd.conf.org.bak
+cat >> /etc/dhcpcd.conf << EOL
+
+denyinterfaces enp1s0
+EOL
+
+separator
+echo "\nConfiguring interfaces file"
+cp /etc/network/interfaces /etc/network/interfaces.org.bak
+
+cat > /etc/network/interfaces << EOL
+# interfaces(5) file used by ifup(8) and ifdown(8)
+
+# Please note that this file is written to be used with dhcpcd
+# For static IP, consult /etc/dhcpcd.conf and 'man dhcpcd.conf'
+
+# Include files from /etc/network/interfaces.d:
+source-directory /etc/network/interfaces.d
+
+auto lo
+iface lo inet loopback
+
+#iface enp3s0 inet manual
+
+allow-hotplug enp1s0
+iface enp1s0 inet static
+    address 172.24.1.1
+    netmask 255.255.255.0
+    network 172.24.1.0
+    broadcast 172.24.1.255
+#    wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+
+EOL
+}
+
+configure_dnsmasq(){
+separator
+echo "\nConfiguring DNS forwarder and DHCP server\n"
+
+dnsmasq_conf=/etc/dnsmasq.conf
+dnsmasq_conf_bak=/etc/dnsmasq.conf.org.bak
+
+if [ -f $dnsmasq_conf ];
+then
+	cp -f $dnsmasq_conf $dnsmasq_conf_bak
+fi
+
+cat > $dnsmasq_conf << EOL
+interface=enp1s0      						# Use interface enp1s0
+listen-address=172.24.1.1 					# Explicitly specify the address to listen on
+bind-interfaces      						# Bind to the interface to make sure we aren't sending things elsewhere
+server=1.1.1.1       						# Forward DNS requests to Google DNS
+domain-needed        						# Don't forward short names
+bogus-priv           						# Never forward addresses in the non-routed address spaces
+dhcp-range=172.24.1.50,172.24.1.150,12h 	# Assign IP addresses between 172.24.1.50 and 172.24.1.150 with a 12 hour lease time
+EOL
+}
+
+configure_ipv4(){
+separator
+
+echo "\nsetting up ipv4 forwarding\n"
+
+sysctl_conf=/etc/sysctl.conf
+sysctl_conf_bak=/etc/sysctl.conf.org.bak
+
+if [ -f $sysctl_conf ];
+then
+	echo "Found existing: $sysctl_conf"
+	echo "Backup location: $sysctl_conf_bak"
+	cp -f $sysctl_conf $sysctl_conf_bak
+	echo ""
+fi
+
+sed -i "s/#net.ipv4.ip_forward/net.ipv4.ip_forward/g" $sysctl_conf
+
+sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
+
+ipv4nat_conf="/etc/iptables.ipv4.nat"
+ipv4nat_conf_bak="/etc/iptables.ipv4.nat.org.bak"
+
+if [ -f $ipv4nat_conf ];
+then
+	echo "Found existing: $ipv4nat_conf"
+	echo "Backup location: $ipv4nat_conf_bak"
+	cp -f $ipv4nat_conf $ipv4nat_conf_bak
+fi
+
+eval "iptables -t nat -A POSTROUTING -o enp3s0 -j MASQUERADE"
+eval "iptables -A FORWARD -i enp3s0 -o enp1s0 -m state --state RELATED,ESTABLISHED -j ACCEPT"
+eval "iptables -A FORWARD -i enp1s0 -o enp3s0 -j ACCEPT"
+
+sh -c "iptables-save > /etc/iptables.ipv4.nat"
+
+sed -i 's/^exit 0/iptables-restore < \/etc\/iptables.ipv4.nat\n  \n&/' /etc/rc.local
+}
+
+dhcpd_config_update(){
+dhcpcd_nat=/lib/dhcpcd/dhcpcd-hooks/70-ipv4-nat
+echo "iptables-restore < /etc/iptables.ipv4.nat" > $dhcpcd_nat
+}
+
+tor_conf(){
+echo "\nConfiguring Security"
+
+rm /etc/tor/torrc
+cat >> /etc/tor/torrc << EOL
+Log notice file /var/log/tor/notices.log
+VirtualAddrNetwork 10.192.0.0/10
+AutomapHostsSuffixes .onion,.exit
+AutomapHostsOnResolve 1
+TransPort 9040
+TransListenAddress 172.24.1.1
+DNSPort 53
+DNSListenAddress 172.24.1.1
+
+# Add this in the Tor config file
+# Exclude Nodes of all of these countries
+# Five Eyes: U.S., Australia, Canada, New Zealand, Great Britain.
+ExcludeNodes {us},{au},{ca},{nz},{gb}
+ExcludeExitNodes {us},{au},{ca},{nz},{gb}
+EOL
+}
+
+tor_net(){
+separator
+echo "\nRouting ethernet out"
+
+eval "iptables -F"
+eval "iptables -t nat -F"
+eval "iptables -t nat -A POSTROUTING -o enp3s0 -j MASQUERADE"
+eval "iptables -A FORWARD -i enp3s0 -o enp1s0 -m state --state RELATED,ESTABLISHED -j ACCEPT"
+eval "iptables -A FORWARD -i enp1s0 -o enp3s0 -j ACCEPT"
+eval "iptables -t nat -A PREROUTING -i enp1s0 -p tcp --dport 22 -j REDIRECT --to-ports 22"
+eval "iptables -t nat -A PREROUTING -i enp1s0 -p udp --dport 53 -j REDIRECT --to-ports 53"
+eval "iptables -t nat -A PREROUTING -i enp1s0 -p tcp --syn -j REDIRECT --to-ports 9040"
+}
+
+tor_start(){
+separator
+
+echo "\nStarting Tor"
+service tor stop
+service tor start
+echo "\nTor Physical Isolation successfully configured and started"
+}
+
+restart_services(){
+separator
+
+echo "\nRestarting dhcpd"
+service dhcpcd restart
+separator
+
+echo "\nReloading ethernet configuration"
+ifdown enp1s0; ifup enp1s0
+separator
+
+echo "\nRestarting dnsmasq"
+/etc/init.d/dnsmasq restart
+}
+
+start_hotspot(){
+separator
+echo "\nStarting dnsmasq\n"
+service dnsmasq start
+}
+
+# param/option check
+if [ -z "$1" ];
+then
+	root_check
+	echo "\nConfiguring Tor Physical isolation"
+	root_check
+	configure_interfaces
+	configure_dnsmasq
+	tor_conf
+	tor_net
+	restart_services
+	tor_start
+	exit 1
+elif [[ $1 =~ "start" ]];
+then
+	start_hotspot
+	#exit 1
+elif [[ $1 =~ "stop" ]];
+then
+	stop_hotspot
+	exit 1
+fi
