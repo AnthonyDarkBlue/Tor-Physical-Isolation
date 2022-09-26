@@ -8,3 +8,5 @@ More info in the guide file..
 the script can be started with: sudo ./start
 the script can be stopped with: sudo ./stop
 
+Last tested on Xubuntu 16.04.6 LTS (02-07-2022)
+Doesnt appear to work on new debian based distros.
