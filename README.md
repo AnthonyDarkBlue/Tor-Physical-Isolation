@@ -9,4 +9,6 @@ the script can be started with: sudo ./start
 the script can be stopped with: sudo ./stop
 
 Last tested on Xubuntu 16.04.6 LTS (02-07-2022)
+https://cdimage.ubuntu.com/xubuntu/releases/16.04/release/
+
 Doesnt appear to work on new debian based distros.
