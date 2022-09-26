@@ -6,6 +6,7 @@ Meant for a desktop with atleast 2 ethernet ports, one to the ISP and one to the
 More info in the guide file..
 
 the script can be started with: sudo ./start
+
 the script can be stopped with: sudo ./stop
 
 Last tested on Xubuntu 16.04.6 LTS (02-07-2022)
