@@ -1,0 +1,50 @@
+Tor Physical Isolation computer setup.
+Computer needs atleast 2 ethernet ports on the desktop if you want to use this script.
+One to start the tor protocol, second one to connect a safe workspace.
+
+Updated (02-07-2022) Tested on Xubuntu 16.04.6 LTS
+LOG: clear instructions.
+
+1. starting point.
+login as root "sudo su" or "sudo -i"
+“apt update”
+
+2. Install needed packages.
+“apt install ranger inxi tor ifupdown dhcpcd5 dnsmasq”
+
+3. Avoid dnsmasq & systemd-resolved conflicts.
+Open a terminal and write:
+"sudo nano /etc/systemd/resolved.conf"
+
+Uncomment "#DNSStubListener=no"
+If its not there just add the line:
+"DNSStubListener=no"
+
+CTRL+O to save, CTRL+X to exit.
+
+4. Edit ./start script
+Current internet interface
+
+In the current ./start script enp3s0 is your current interface name from your active network connection (ISP home connection) going to your machine.
+enp1s0 in the script is the torrified out connection which you probably gonna use for a safe space.
+See "inxi -n" to know what to replace it with.
+
+Now replace enp1s0 with the name of your second interface name in the ./start script. 
+
+5. The computer is done, you will not use this computer for anything with an exception to run the Tor Physical Isolation script.
+This computer is now an onion router, it protects you from most possible leak.
+
+6. How to use.
+
+ - 1: Connect your Tor physical isolation computer to the internet (ethernet) on you first interface's ethernet port. (ISP connection)
+ - 2: Open a terminal and type: sudo sh ./start in the same directory where you downloaded the script.
+ - 2B: Alternatively you can do "sudo -i" in a terminal and "cd" to the directory, then launch with "sh ./start"
+ 
+ 
+ - 3: Put another cable into your Tor Physical isolation computer, then connect that cable to a safe workspace (maybe even an encrypted one if needed)
+ - 4: And enjoy.
+
+SAFETY TIPS:
+set-up a firewall on your safe workspace computer.
+Disable IPv6.
+Blacklist modules like camera, microphone & wifi IF you workspace computer has it (linux).
