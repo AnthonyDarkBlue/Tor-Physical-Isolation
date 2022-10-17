@@ -1,0 +1,38 @@
+#!/bin/bash
+
+root_check(){
+if (( $EUID != 0 )); then
+  echo -e "Must be run as root. Type in 'sudo $0' to run it as root."
+  exit 1
+fi
+}
+
+separator(){
+sep="---------------------------------------------------------------------"
+echo -e $sep
+}
+
+stop_hotspot(){
+separator
+echo -e "Stopping Tor Physical Isolation"
+service tor stop
+service dnsmasq stop
+}
+
+# param/option check
+if [ -z "$1" ];
+then
+	root_check
+	echo -e "Stopping.."
+	root_check
+	stop_hotspot
+	exit 1
+elif [[ $1 =~ "start" ]];
+then
+	start_hotspot
+	#exit 1
+elif [[ $1 =~ "stop" ]];
+then
+	stop_hotspot
+	exit 1
+fi
