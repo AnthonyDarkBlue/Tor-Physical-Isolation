@@ -4,11 +4,9 @@ Tor Physical Isolation script for debian based ditro's
 Meant for a desktop with atleast 2 ethernet ports, one to the ISP and one to the the safe workspace (much alike Whonix)
 More info in the guide file..
 
-the script can be started with: sudo ./start
+the script can be started with: ./start
 
-the script can be stopped with: sudo ./stop
+the script can be stopped with: ./stop
 
-Last tested on Xubuntu 16.04.6 LTS (02-07-2022)
-https://cdimage.ubuntu.com/xubuntu/releases/16.04/release/
-
-Doesnt appear to work on new debian based distros.
+Last tested on debian-9.8.0-amd64 (17-10-2022)
+https://ftp.cae.tntech.edu/debian-cd/
