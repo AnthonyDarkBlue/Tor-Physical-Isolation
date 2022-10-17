@@ -1,0 +1,76 @@
+﻿Tor Physical Isolation computer setup.
+Computer needs atleast 2 ethernet ports for this to work.
+Updated (17-10-2022) Tested on debian-9.8.0-amd64-xfce-CD-1.iso
+LOG: clear instructions.
+
+1. starting point.
+login as root "sudo su" or "sudo -i"
+“apt update”
+
+2. Install needed packages.
+“apt install ranger inxi tor dhcpcd5 dnsmasq”
+
+3. Avoid dnsmasq & systemd-resolved conflicts.
+Open a terminal and write:
+"sudo nano /etc/systemd/resolved.conf"
+
+Uncomment "#DNSStubListener=no"
+If its not there just add the line:
+"DNSStubListener=no"
+
+CTRL+O to save, CTRL+X to exit.
+
+Download and setting up the script.
+"sudo -i"
+"wget https://github.com/AnthonyDarkBlue/Tor-Physical-Isolation/archve/master.tar.gz"
+"tar xvpfz master.tar.gz"
+"sudo ranger"
+
+Enter that extracted directory (Tor-Physical-Isolation) and copy (Y) the script to your machine root, (P) to paste it.
+
+To make the extracted scripts executable enter the following commands to each of them.
+"chmod 777 start"
+"chmod 777 stop"
+
+4. Edit ./start script
+Current internet interface
+
+In the current ./start script enp3s0 is your current interface name from your active network connection (ISP home connection) going to your machine.
+See "inxi -n" to know what to replace it with. (or "ip addr" instead of inxi "inxi -n")
+Replace enp3s0 with the one status: up.
+
+Now replace enp1s0 with the name of your second interface name in the ./start script. 
+
+5. The computer is done, you will not use this computer for anything with an exception to run the Tor Physical Isolation script.
+This computer is now an onion router, it protects you from most possible leak.
+
+6. How to use.
+
+ - 1: Open a terminal and type: "sudo ./start" in the same directory where you placed the script.
+ - 2: Or "./start" when yo are logged in as root account.
+ 
+ - Issue "sudo ./stop" or "./stop" when you wanna stop the script.
+ 
+ 
+ - 3: Put another cable into your Tor Physical isolation computer, then connect that cable to a safe workspace (maybe even an encrypted one if needed)
+ - 4: And enjoy.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
