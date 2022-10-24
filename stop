@@ -8,13 +8,13 @@ fi
 }
 
 separator(){
-sep="---------------------------------------------------------------------"
+sep=
 echo -e $sep
 }
 
 stop_hotspot(){
 separator
-echo -e "Stopping Tor Physical Isolation"
+echo -e "[STOPPING.. ]"
 service tor stop
 service dnsmasq stop
 }
@@ -23,7 +23,7 @@ service dnsmasq stop
 if [ -z "$1" ];
 then
 	root_check
-	echo -e "Stopping.."
+	echo -e "[STOPPING.. ]"
 	root_check
 	stop_hotspot
 	exit 1
