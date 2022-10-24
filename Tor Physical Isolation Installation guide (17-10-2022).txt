@@ -1,18 +1,40 @@
-﻿Tor Physical Isolation computer setup.
+Tor Physical Isolation computer setup.
 Computer needs atleast 2 ethernet ports for this to work.
-Updated (17-10-2022) Tested on debian-9.8.0-amd64-xfce-CD-1.iso
+Updated (24-10-2022) Tested on debian-11.5.0-amd64-netinst.iso
 LOG: clear instructions.
 
-1. starting point.
-login as root "sudo su" or "sudo -i"
-“apt update”
+Create a debian bootable device, boot it up follow through the promts to set it up.
+In the end when selecting additional software, uncheck everything! even standard system utilities.
 
-2. Install needed packages.
-“apt install ranger inxi tor dhcpcd5 dnsmasq”
+Now, you are probably left with a CLI install of debian 11, 
+To make this work you have to follow strict instructions because of certain changes. (availability of Tor V2 and V3 in the repos)
 
-3. Avoid dnsmasq & systemd-resolved conflicts.
-Open a terminal and write:
-"sudo nano /etc/systemd/resolved.conf"
+1.First of all, log in as root.
+
+2.Edit your sources list.
+"nano /etc/apt/sources.list"
+
+Comment out each repository you see there and add the following repositories underneath.
+
+deb http://deb.debian.org/debian/ stretch main contrib non-free
+deb-src http://deb.debian.org/debian/ stretch main contrib non-free
+
+deb http://deb.debian.org/debian/ stretch-updates main contrib non-free
+deb-src http://deb.debian.org/debian/ stretch-updates main contrib non-free
+
+deb http://deb.debian.org/debian-security stretch/updates main
+deb-src http://deb.debian.org/debian-security stretch/updates main
+
+CTRL+O to save, CTRL+X to exit.
+
+3. Now update.
+"apt update"
+
+4.Install needed packages.
+“apt install tor dhcpcd5 dnsmasq”
+
+5.Avoid dnsmasq & systemd-resolved conflicts.
+"nano /etc/systemd/resolved.conf"
 
 Uncomment "#DNSStubListener=no"
 If its not there just add the line:
@@ -20,19 +42,29 @@ If its not there just add the line:
 
 CTRL+O to save, CTRL+X to exit.
 
-Download and setting up the script.
-"sudo -i"
+6.Kill dnsmasq as it interferes with your networking.
+"systemctl stop dnsmasq"
+
+7.Some packages arent available in the repositories where we pulled Tor V2 from.
+So we have to edit the sources.list again..
+"nano /etc/apt/sources.list"
+
+Now, remove the entries we added in step 2.
+Uncomment your original entries. (the repositories from debian 11)
+
+8.Install some more packages.
+"apt install wget ifupdown iptables ranger"
+
+9.Download and unpacking the script
 "wget https://github.com/AnthonyDarkBlue/Tor-Physical-Isolation/archve/master.tar.gz"
 "tar xvpfz master.tar.gz"
-"sudo ranger"
 
-Enter that extracted directory (Tor-Physical-Isolation) and copy (Y) the script to your machine root, (P) to paste it.
-
-To make the extracted scripts executable enter the following commands to each of them.
+10. Making the scripts executable
+"cd /Tor-Physical-Isolation-main"
 "chmod 777 start"
 "chmod 777 stop"
 
-4. Edit ./start script
+11. Edit ./start script
 Current internet interface
 
 In the current ./start script enp3s0 is your current interface name from your active network connection (ISP home connection) going to your machine.
@@ -41,10 +73,10 @@ Replace enp3s0 with the one status: up.
 
 Now replace enp1s0 with the name of your second interface name in the ./start script. 
 
-5. The computer is done, you will not use this computer for anything with an exception to run the Tor Physical Isolation script.
+12. The computer is done, you will not use this computer for anything with an exception to run the Tor Physical Isolation script.
 This computer is now an onion router, it protects you from most possible leak.
 
-6. How to use.
+How to use.
 
  - 1: Open a terminal and type: "sudo ./start" in the same directory where you placed the script.
  - 2: Or "./start" when yo are logged in as root account.
@@ -54,23 +86,5 @@ This computer is now an onion router, it protects you from most possible leak.
  
  - 3: Put another cable into your Tor Physical isolation computer, then connect that cable to a safe workspace (maybe even an encrypted one if needed)
  - 4: And enjoy.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
